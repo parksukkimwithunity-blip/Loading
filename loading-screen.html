@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>로딩 화면</title>
+<style>
+:root{--ink:#4a3350;--pink:#ff9ec4;--mint:#9be8d0;--paper:#fff8fb}
+*{box-sizing:border-box}
+body{margin:0;font-family:Pretendard,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;background:var(--paper);color:var(--ink);display:flex;flex-direction:column;align-items:center;padding:12px;gap:10px}
+#wrap{width:min(100%,640px);aspect-ratio:16/9;position:relative;overflow:hidden;border-radius:14px;
+background:repeating-conic-gradient(#e9e2ee 0 25%,#fff 0 50%) 0 0/16px 16px}
+#stage{position:absolute;left:0;top:0;width:640px;height:360px;transform-origin:0 0}
+#bgimg{position:absolute;left:0;top:0;width:640px;height:360px;object-fit:cover}
+#stage{--bar:#ff9ec4;--edge:#4a3350}
+#track{position:absolute;left:80px;top:266px;width:480px;height:30px;background:var(--edge);
+clip-path:polygon(6px 0,calc(100% - 6px) 0,calc(100% - 6px) 6px,100% 6px,100% calc(100% - 6px),calc(100% - 6px) calc(100% - 6px),calc(100% - 6px) 100%,6px 100%,6px calc(100% - 6px),0 calc(100% - 6px),0 6px,6px 6px)}
+#track::before{content:"";position:absolute;inset:6px;background:#fff;
+clip-path:polygon(3px 0,calc(100% - 3px) 0,calc(100% - 3px) 3px,100% 3px,100% calc(100% - 3px),calc(100% - 3px) calc(100% - 3px),calc(100% - 3px) 100%,3px 100%,3px calc(100% - 3px),0 calc(100% - 3px),0 3px,3px 3px)}
+#fill{position:absolute;left:6px;top:6px;height:18px;width:0;
+background:linear-gradient(rgba(255,255,255,.5) 0 4px,transparent 4px),var(--bar);
+-webkit-mask:repeating-linear-gradient(90deg,#000 0 12px,transparent 12px 15px);mask:repeating-linear-gradient(90deg,#000 0 12px,transparent 12px 15px)}
+.char{position:absolute;width:96px;height:96px;object-fit:contain;transform-origin:50% 100%;animation:walk .5s ease-in-out infinite;user-select:none;-webkit-user-drag:none}
+.char.b{animation-delay:.25s}
+.cheer .char{animation:cheer .6s ease-out infinite}
+.cheer .char.b{animation-delay:.15s}
+@keyframes walk{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-8px) rotate(3deg)}}
+@keyframes cheer{0%,100%{transform:translateY(0)}40%{transform:translateY(-26px) scale(1.05)}}
+.txt{position:absolute;top:304px;font-size:20px;font-weight:700;color:var(--ink);white-space:nowrap}
+#label{left:80px}
+#pct{right:80px;text-align:right}
+.btn,.row button{font:inherit;font-weight:700;border:0;border-radius:999px;padding:10px 18px;background:var(--ink);color:#fff;cursor:pointer}
+.sub{background:var(--mint)!important;color:var(--ink)!important;padding:8px 14px!important}
+details{width:min(100%,640px);background:#fff;border-radius:14px;padding:10px 14px;box-shadow:0 1px 6px #0001;font-size:14px}
+summary{cursor:pointer;font-weight:700}
+label.f{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-top:1px solid #f0e6f2}
+label.f:first-of-type{border-top:0}
+input[type=text],input[type=number]{font:inherit;padding:6px 8px;border:1px solid #e3d3e8;border-radius:8px;width:150px}
+@media (prefers-reduced-motion:reduce){.char{animation:none!important}}
+</style>
+</head>
+<body>
+
+<div id="wrap"><div id="stage"></div></div>
+
+<div class="row">
+  <button id="restart">다시 시작</button>
+  <button class="sub" id="gifBtn">GIF 저장</button>
+  <label><input type="checkbox" id="gifBg"> 배경 포함</label>
+  <select id="gifSize"><option value="320">작게</option><option value="480" selected>보통</option><option value="640">크게</option></select>
+  <span id="gifMsg"></span>
+</div>
+
+<details>
+  <summary>꾸미기 (이미지 바꾸기)</summary>
+  <label class="f">캐릭터 1 걷는 모습 (GIF 가능, 여러 장이면 프레임) <input type="file" id="f1" accept="image/*" multiple></label>
+  <label class="f">캐릭터 2 걷는 모습 (GIF 가능, 여러 장이면 프레임) <input type="file" id="f2" accept="image/*" multiple></label>
+  <label class="f">캐릭터 1 도착해서 뛰는 모습 (GIF 가능) <input type="file" id="c1" accept="image/*" multiple></label>
+  <label class="f">캐릭터 2 도착해서 뛰는 모습 (GIF 가능) <input type="file" id="c2" accept="image/*" multiple></label>
+  <label class="f">바탕화면 이미지 <input type="file" id="fBg" accept="image/*"></label>
+  <label class="f">바탕화면 색 <span><input type="color" id="cBg" value="#ffe3ef"> <button class="btn sub" id="bgClear">투명</button></span></label>
+  <label class="f">로딩바 색 <input type="color" id="cBar" value="#ff9ec4"></label>
+  <label class="f">로딩바 테두리 색 <input type="color" id="cEdge" value="#4a3350"></label>
+  <label class="f">문구 1 (처음) <input type="text" class="tx"></label>
+  <label class="f">문구 2 (중간) <input type="text" class="tx"></label>
+  <label class="f">문구 3 (끝날 때쯤) <input type="text" class="tx"></label>
+  <label class="f">걸리는 시간(초) <input type="number" id="nSec" min="2" max="60" value="8"></label>
+</details>
+
+<script>
+/* ===== 여기만 바꾸면 돼요 (경로를 넣으면 납품용 기본값이 됩니다) ===== */
+const CONFIG = {
+  bg: null,                 // 바탕화면 이미지 경로. null이면 투명
+  bgColor: '',              // 바탕화면 색. ''이면 투명
+  barColor: '#ff9ec4',      // 로딩바 색
+  edgeColor: '#4a3350',     // 로딩바 테두리 색
+  seconds: 8,               // 로딩이 차오르는 시간(초)
+  loop: true,               // 끝나면 다시 시작할지
+  holdMs: 1800,             // 도착 후 멈춰 있는 시간(ms)
+  texts: ['우리 사랑 로딩중…', '거의 다 왔어요', '조금만 더!'],
+  doneText: '도착!',
+  chars: [                  // frames: 걷는 모습, cheer: 도착해서 뛰는 모습 (경로 한 개(GIF 가능) 또는 여러 개(프레임 반복)). null이면 임시 그림 / 걷는 모습 그대로
+    { frames: null, cheer: null },
+    { frames: null, cheer: null }
+  ]
+};
+/* ======================================================================== */
+
+const BAR = {x:80, w:480}, BASE_Y = 266, GAP = 74, BLOCKS = 31;
+const $ = s => document.querySelector(s);
+const stage = $('#stage'), wrap = $('#wrap');
+const uri = svg => 'data:image/svg+xml,' + encodeURIComponent(svg);
+const phChar = h => uri(`<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><ellipse cx="42" cy="112" rx="14" ry="6" fill="#6b4a73"/><ellipse cx="78" cy="112" rx="14" ry="6" fill="#6b4a73"/>
+<circle cx="60" cy="58" r="46" fill="hsl(${h} 85% 82%)" stroke="#6b4a73" stroke-width="5"/><circle cx="43" cy="52" r="6" fill="#4a3350"/><circle cx="77" cy="52" r="6" fill="#4a3350"/>
+<path d="M49 72q11 9 22 0" stroke="#4a3350" stroke-width="5" fill="none" stroke-linecap="round"/><circle cx="31" cy="68" r="7" fill="#ff9ec4" opacity=".6"/><circle cx="89" cy="68" r="7" fill="#ff9ec4" opacity=".6"/></svg>`);
+const PH = [phChar(335), phChar(165)];
+
+function el(tag, cls, parent = stage){ const e = document.createElement(tag); if (cls) e.className = cls; parent.appendChild(e); return e; }
+const bgimg = el('img'); bgimg.id = 'bgimg'; bgimg.alt = '';
+const track = el('div'); track.id = 'track';
+const fill = el('div', '', track); fill.id = 'fill';
+const label = el('div', 'txt'); label.id = 'label';
+const pct = el('div', 'txt'); pct.id = 'pct';
+const chars = [0, 1].map(i => { const e = el('img', 'char' + (i ? ' b' : '')); e.alt = ''; return e; });
+const frameIdx = [0, 0];
+
+function applyBg(){
+  bgimg.style.display = CONFIG.bg ? '' : 'none';
+  if (CONFIG.bg) bgimg.src = CONFIG.bg;
+  wrap.style.background = CONFIG.bgColor || '';
+}
+function curFrames(i){
+  const c = CONFIG.chars[i];
+  return (doneAt && c.cheer && c.cheer.length) ? c.cheer : c.frames;
+}
+function setChar(i){
+  const f = curFrames(i);
+  frameIdx[i] = 0;
+  chars[i].src = f && f.length ? f[0] : PH[i];
+}
+setInterval(() => chars.forEach((c, i) => {
+  const f = curFrames(i);
+  if (f && f.length > 1){ frameIdx[i] = (frameIdx[i] + 1) % f.length; c.src = f[frameIdx[i]]; }
+}), 180);
+
+let t0 = performance.now(), doneAt = 0;
+function restart(){ t0 = performance.now(); doneAt = 0; stage.classList.remove('cheer'); setChar(0); setChar(1); }
+function frame(now){
+  const p = Math.min(1, (now - t0) / (CONFIG.seconds * 1000));
+  const lead = BAR.x + GAP + p * (BAR.w - GAP);
+  fill.style.width = (Math.floor(p * BLOCKS) * 15) + 'px';
+  chars[0].style.left = (lead - 48) + 'px';
+  chars[1].style.left = (lead - GAP - 48) + 'px';
+  chars.forEach(c => c.style.top = (BASE_Y - 96) + 'px');
+  pct.textContent = Math.round(p * 100) + '%';
+  if (p < 1){
+    label.textContent = CONFIG.texts[Math.min(CONFIG.texts.length - 1, Math.floor(p * CONFIG.texts.length))];
+  } else {
+    if (!doneAt){ doneAt = now; stage.classList.add('cheer'); setChar(0); setChar(1); }
+    label.textContent = CONFIG.doneText;
+    if (CONFIG.loop && now - doneAt > CONFIG.holdMs) restart();
+  }
+  requestAnimationFrame(frame);
+}
+
+// ---- 업로드 (미리보기용) ----
+const url = f => URL.createObjectURL(f);
+$('#f1').onchange = e => { if (e.target.files.length){ CONFIG.chars[0].frames = [...e.target.files].map(url); setChar(0); } };
+$('#f2').onchange = e => { if (e.target.files.length){ CONFIG.chars[1].frames = [...e.target.files].map(url); setChar(1); } };
+$('#c1').onchange = e => { if (e.target.files.length){ CONFIG.chars[0].cheer = [...e.target.files].map(url); setChar(0); } };
+$('#c2').onchange = e => { if (e.target.files.length){ CONFIG.chars[1].cheer = [...e.target.files].map(url); setChar(1); } };
+$('#fBg').onchange = e => { if (e.target.files[0]){ CONFIG.bg = url(e.target.files[0]); applyBg(); } };
+$('#cBg').oninput = e => { CONFIG.bgColor = e.target.value; applyBg(); };
+$('#bgClear').onclick = () => { CONFIG.bg = null; CONFIG.bgColor = ''; $('#fBg').value = ''; applyBg(); };
+document.querySelectorAll('.tx').forEach((inp, i) => {
+  inp.value = CONFIG.texts[i] || '';
+  inp.oninput = () => { CONFIG.texts[i] = inp.value || '로딩중…'; };
+});
+$('#nSec').onchange = e => { CONFIG.seconds = Math.max(2, +e.target.value || 8); restart(); };
+$('#restart').onclick = restart;
+
+// ---- GIF 저장 (기본: 투명 배경) ----
+const loadImg = src => new Promise(res => { const im = new Image(); im.onload = () => res(im); im.onerror = () => res(null); im.src = src; });
+// GIF 파일이면 프레임별로 풀어서 저장본에도 움직임을 넣어요 (지원하지 않는 브라우저는 첫 프레임만)
+async function decodeGif(src){
+  if (!window.ImageDecoder) return null;
+  try {
+    const buf = await (await fetch(src)).arrayBuffer();
+    if (String.fromCharCode(...new Uint8Array(buf, 0, 3)) !== 'GIF') return null;
+    const dec = new ImageDecoder({data: buf, type: 'image/gif'}); await dec.tracks.ready;
+    const n = dec.tracks.selectedTrack.frameCount, out = [];
+    for (let i = 0; i < n; i++){
+      const {image} = await dec.decode({frameIndex: i});
+      out.push({img: await createImageBitmap(image), d: Math.max(40, (image.duration || 100000) / 1000)});
+      image.close();
+    }
+    return n > 1 ? out : null;
+  } catch (e){ return null; }
+}
+async function loadSet(list, fb){
+  const ims = [], ds = [];
+  for (const src of (list && list.length ? list : [fb])){
+    const fr = await decodeGif(src);
+    if (fr) fr.forEach(o => { ims.push(o.img); ds.push(o.d); });
+    else { ims.push(await loadImg(src)); ds.push(180); }
+  }
+  return {ims, ds, total: ds.reduce((a, b) => a + b, 0) || 180};
+}
+function pick(set, t){
+  let tt = t % set.total;
+  for (let k = 0; k < set.ims.length; k++){ if (tt < set.ds[k]) return set.ims[k]; tt -= set.ds[k]; }
+  return set.ims[0];
+}
+function notch(g, x, y, w, h, n){
+  g.beginPath(); g.moveTo(x+n, y); g.lineTo(x+w-n, y); g.lineTo(x+w-n, y+n); g.lineTo(x+w, y+n); g.lineTo(x+w, y+h-n); g.lineTo(x+w-n, y+h-n);
+  g.lineTo(x+w-n, y+h); g.lineTo(x+n, y+h); g.lineTo(x+n, y+h-n); g.lineTo(x, y+h-n); g.lineTo(x, y+n); g.lineTo(x+n, y+n); g.closePath(); g.fill();
+}
+function drawScene(g, s, t, imgsC, bgI, withBg){
+  const sec = CONFIG.seconds * 1000, p = Math.min(1, t / sec), done = t >= sec;
+  g.setTransform(s, 0, 0, s, 0, 0); g.clearRect(0, 0, 640, 360);
+  if (withBg){
+    if (CONFIG.bgColor){ g.fillStyle = CONFIG.bgColor; g.fillRect(0, 0, 640, 360); }
+    if (bgI){ const r = Math.max(640 / bgI.width, 360 / bgI.height), w = bgI.width * r, h = bgI.height * r; g.drawImage(bgI, (640 - w) / 2, (360 - h) / 2, w, h); }
+  }
+  g.fillStyle = CONFIG.edgeColor; notch(g, 80, 266, 480, 30, 6);
+  g.fillStyle = '#fff'; notch(g, 86, 272, 468, 18, 3);
+  const n = Math.floor(p * BLOCKS);
+  for (let i = 0; i < n; i++){ g.fillStyle = CONFIG.barColor; g.fillRect(86 + i * 15, 272, 12, 18); g.fillStyle = 'rgba(255,255,255,.5)'; g.fillRect(86 + i * 15, 272, 12, 4); }
+  const lead = BAR.x + GAP + p * (BAR.w - GAP);
+  imgsC.forEach((arr, i) => {
+    const im = pick(done ? arr.cheer : arr.walk, done ? t - sec : t); if (!im) return;
+    const per = done ? .6 : .5, dl = i ? (done ? .15 : .25) : 0;
+    const ph = ((((done ? t - sec : t) / 1000 - dl) % per) + per) % per / per;
+    let y, rot = 0, sc = 1;
+    if (done){ const u = ph < .4 ? ph / .4 : (ph - .4) / .6, e = 1 - (1 - u) * (1 - u), k = ph < .4 ? e : 1 - e; y = -26 * k; sc = 1 + .05 * k; }
+    else { const u = .5 - .5 * Math.cos(2 * Math.PI * ph); y = -8 * u; rot = (-3 + 6 * u) * Math.PI / 180; }
+    const f = Math.min(96 / im.width, 96 / im.height), w = im.width * f, h = im.height * f;
+    g.setTransform(s, 0, 0, s, 0, 0); g.translate(lead - i * GAP, BASE_Y + y); g.rotate(rot); g.scale(sc, sc);
+    g.drawImage(im, -w / 2, -96 + (96 - h) / 2, w, h);
+  });
+  g.setTransform(s, 0, 0, s, 0, 0); g.font = '700 20px Pretendard,"Apple SD Gothic Neo","Malgun Gothic",sans-serif'; g.fillStyle = '#4a3350'; g.textBaseline = 'top';
+  g.textAlign = 'left'; g.fillText(done ? CONFIG.doneText : CONFIG.texts[Math.min(CONFIG.texts.length - 1, Math.floor(p * CONFIG.texts.length))], 80, 304);
+  g.textAlign = 'right'; g.fillText(Math.round(p * 100) + '%', 560, 304);
+}
+function lzw(idx, mcs){
+  const clear = 1 << mcs, eoi = clear + 1; let size = mcs + 1, next = eoi + 1, cur = 0, bits = 0; const dict = new Map(), out = [];
+  const put = c => { cur |= c << bits; bits += size; while (bits >= 8){ out.push(cur & 255); cur >>= 8; bits -= 8; } };
+  put(clear); let prefix = idx[0];
+  for (let i = 1; i < idx.length; i++){
+    const k = (prefix << 8) | idx[i], v = dict.get(k);
+    if (v !== undefined){ prefix = v; continue; }
+    put(prefix);
+    if (next < 4096){ dict.set(k, next++); if (next > (1 << size) && size < 12) size++; }
+    else { put(clear); dict.clear(); size = mcs + 1; next = eoi + 1; }
+    prefix = idx[i];
+  }
+  put(prefix); put(eoi); if (bits > 0) out.push(cur & 255);
+  return out;
+}
+async function saveGif(){
+  const msg = $('#gifMsg'), btn = $('#gifBtn'), W = +$('#gifSize').value, H = Math.round(W * 9 / 16), s = W / 640, withBg = $('#gifBg').checked;
+  btn.disabled = true; msg.textContent = '준비 중…';
+  try {
+    const imgsC = [];
+    for (let i = 0; i < 2; i++){
+      const c = CONFIG.chars[i], walk = await loadSet(c.frames, PH[i]);
+      imgsC.push({walk, cheer: (c.cheer && c.cheer.length) ? await loadSet(c.cheer, PH[i]) : walk});
+    }
+    const bgI = CONFIG.bg ? await loadImg(CONFIG.bg) : null;
+    const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const g = cv.getContext('2d', {willReadFrequently:true});
+    const total = CONFIG.seconds * 1000 + CONFIG.holdMs, STEP = 80, N = Math.ceil(total / STEP);
+    const hist = new Map();
+    for (let k = 0; k < 16; k++){
+      drawScene(g, s, total * k / 16, imgsC, bgI, withBg);
+      const d = g.getImageData(0, 0, W, H).data;
+      for (let i = 0; i < d.length; i += 4){
+        if (d[i+3] < 128) continue;
+        const key = ((d[i] >> 3) << 10) | ((d[i+1] >> 3) << 5) | (d[i+2] >> 3), e = hist.get(key);
+        if (e) e.n++; else hist.set(key, {n:1, r:d[i], g:d[i+1], b:d[i+2]});
+      }
+    }
+    const pal = [...hist.values()].sort((a, b) => b.n - a.n).slice(0, 255);
+    while (pal.length < 255) pal.push({r:0, g:0, b:0});
+    const cache = new Int16Array(32768).fill(-1);
+    const near = (r, gg, b) => { let best = 0, bd = 1e9; for (let i = 0; i < 255; i++){ const p = pal[i], dr = p.r - r, dg = p.g - gg, db = p.b - b, dd = dr*dr + dg*dg + db*db; if (dd < bd){ bd = dd; best = i; } } return best; };
+    const out = [], w16 = v => out.push(v & 255, (v >> 8) & 255), str = t => [...t].map(c => c.charCodeAt(0));
+    out.push(...str('GIF89a')); w16(W); w16(H); out.push(0xF7, 0, 0);
+    pal.forEach(p => out.push(p.r, p.g, p.b)); out.push(0, 0, 0);
+    out.push(0x21, 0xFF, 11, ...str('NETSCAPE2.0'), 3, 1, 0, 0, 0);
+    for (let f = 0; f < N; f++){
+      drawScene(g, s, f * STEP, imgsC, bgI, withBg);
+      const d = g.getImageData(0, 0, W, H).data, idx = new Uint8Array(W * H);
+      for (let i = 0, j = 0; i < d.length; i += 4, j++){
+        if (d[i+3] < 128){ idx[j] = 255; continue; }
+        const key = ((d[i] >> 3) << 10) | ((d[i+1] >> 3) << 5) | (d[i+2] >> 3);
+        let c = cache[key]; if (c < 0){ c = near(d[i], d[i+1], d[i+2]); cache[key] = c; }
+        idx[j] = c;
+      }
+      out.push(0x21, 0xF9, 4, 0x09); w16(8); out.push(255, 0);
+      out.push(0x2C); w16(0); w16(0); w16(W); w16(H); out.push(0, 8);
+      const data = lzw(idx, 8);
+      for (let i = 0; i < data.length; i += 255){ const ch = data.slice(i, i + 255); out.push(ch.length, ...ch); }
+      out.push(0);
+      if (f % 6 === 0){ msg.textContent = '만드는 중… ' + Math.round(f / N * 100) + '%'; await new Promise(r => setTimeout(r)); }
+    }
+    out.push(0x3B);
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([new Uint8Array(out)], {type:'image/gif'})); a.download = 'loading.gif'; a.click();
+    msg.textContent = '저장했어요!';
+  } catch (err){
+    msg.textContent = '저장하지 못했어요. 파일을 직접 연 경우 경로로 넣은 이미지는 막힐 수 있어요. 링크로 열거나 꾸미기에서 이미지를 올려 주세요.';
+  }
+  btn.disabled = false;
+}
+$('#gifBtn').onclick = saveGif;
+
+// ---- 시작 ----
+function fit(){ stage.style.transform = 'scale(' + (wrap.clientWidth / 640) + ')'; }
+addEventListener('resize', fit); fit();
+function applyBar(){
+  stage.style.setProperty('--bar', CONFIG.barColor);
+  stage.style.setProperty('--edge', CONFIG.edgeColor);
+  $('#cBar').value = CONFIG.barColor; $('#cEdge').value = CONFIG.edgeColor;
+}
+$('#cBar').oninput = e => { CONFIG.barColor = e.target.value; applyBar(); };
+$('#cEdge').oninput = e => { CONFIG.edgeColor = e.target.value; applyBar(); };
+applyBar(); applyBg(); setChar(0); setChar(1); requestAnimationFrame(frame);
+</script>
+</body>
+</html>
